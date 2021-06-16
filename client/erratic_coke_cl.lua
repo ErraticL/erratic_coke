@@ -372,7 +372,12 @@ Citizen.CreateThread(function()
 					exports['mythic_notify']:DoLongHudText('error', _U'fail')
 				end
 				TriggerServerEvent('coke:updateTable', false)
+				RemoveBlip(blip)
+				SetBlipRoute(blip, false)
+				DeleteEntity(pickupSpawn)
+				delivering = false
 				checkPlane = false
+				hangar = false
 			end
 		else
 			sleep = 3000
@@ -399,22 +404,32 @@ function delivery()
 			sleep = 5	
 			local playerpos = GetEntityCoords(player)
 			local disttocoord = #(vector3(location.delivery.x,location.delivery.y,location.delivery.z)-vector3(playerpos.x,playerpos.y,playerpos.z))
+			
 			if disttocoord <= 20 then
 				RemoveBlip(blip)
 				SetBlipRoute(blip, false)
-				DrawText3Ds(location.delivery.x,location.delivery.y,location.delivery.z-1, _U'pick_deliv')
-				if IsControlJustPressed(1, 51) then
+
+				if IsPedInAnyPlane(GetPlayerPed(-1)) then
+					DrawText3Ds(location.delivery.x,location.delivery.y,location.delivery.z-1, _U'pick_deliv')
+					if IsControlJustPressed(1, 51) then
+						delivering = false
+						if Config.progBar then
+							exports['progressBars']:startUI(Config.pickupTime, _U'picking_deliv')
+						end
+						Citizen.Wait(Config.pickupTime)
+						if Config.useMythic then
+							exports['mythic_notify']:DoLongHudText('success', _U'picked_deliv')
+						end
+						DeleteEntity(pickupSpawn)
+						Citizen.Wait(2000)
+						final()
+					end
+				else
 					delivering = false
-					if Config.progBar then
-						exports['progressBars']:startUI(Config.pickupTime, _U'picking_deliv')
-					end
-					Citizen.Wait(Config.pickupTime)
 					if Config.useMythic then
-						exports['mythic_notify']:DoLongHudText('success', _U'picked_deliv')
+						exports['mythic_notify']:DoLongHudText('error', 'Where you gonna put this, you need a plane')
 					end
-					DeleteEntity(pickupSpawn)
-					Citizen.Wait(2000)
-					final()
+					TriggerServerEvent('coke:updateTable', false)
 				end
 			else
 				sleep = 1500
